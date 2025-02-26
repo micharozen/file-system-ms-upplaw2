@@ -1,0 +1,40 @@
+# Fichiers et dossiers à ignorer lors du déploiement sur Google Cloud Functions
+
+# Fichiers de développement
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.env.local
+.env.development
+.env.test
+.env
+
+# Fichiers systèmes
+.DS_Store
+Thumbs.db
+
+# Fichiers de configuration Git
+.git/
+.gitignore
+
+# Fichiers de test
+test/
+__tests__/
+*.test.js
+*.spec.js
+
+# Fichiers de documentation
+docs/
+*.md
+!README.md
+
+# Fichiers de déploiement
+deploy.sh
+function.js
+
+# Autres fichiers
+.vscode/
+.idea/
+*.log
+*.tmp 

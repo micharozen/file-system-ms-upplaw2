@@ -1,8 +1,11 @@
 {
-  "name": "mslearn-retrieve-m365-data-with-msgraph-quickstart",
+  "name": "msgraph-api",
   "version": "1.0.0",
+  "description": "API Microsoft Graph pour OneDrive et SharePoint",
+  "main": "index.js",
   "scripts": {
-    "start": "npx http-server -c-1 -a localhost -o"
+    "start": "cd backend && NODE_ENV=development node index.js",
+    "deploy": "gcloud functions deploy 'msGraphApi' --runtime=nodejs20 --trigger-http --entry-point=msGraphApi  --gen2 --region=europe-west9"
   },
   "repository": {
     "type": "git",
@@ -14,5 +17,17 @@
   "bugs": {
     "url": "https://github.com/MicrosoftDocs/mslearn-retrieve-m365-data-with-msgraph-quickstart/issues"
   },
-  "homepage": "https://github.com/MicrosoftDocs/mslearn-retrieve-m365-data-with-msgraph-quickstart#readme"
+  "homepage": "https://github.com/MicrosoftDocs/mslearn-retrieve-m365-data-with-msgraph-quickstart#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "node-fetch": "^2.7.0",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.4.5",
+    "body-parser": "^1.20.2",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

@@ -1,1 +1,72 @@
+# Salesforce DX specific
+.sfdx/
+.sf/
+.localdevserver/
+
+# Backend directory
+backend/node_modules/
+
+# Node.js dependencies
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# macOS system files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Salesforce specific
+.project
+.settings/
+IlluminatedCloud/
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Apex class metadata
+*.cls-meta.xml
+
+# LWC configuration files
+**/jsconfig.json
+**/.eslintrc.json
+
+# Deployment artifacts
+mdapioutput/
