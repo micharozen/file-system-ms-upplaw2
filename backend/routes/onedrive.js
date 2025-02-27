@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const fetch = require('node-fetch');
+const { decrypt } = require('../services/utils');
 
 // Liste les dossiers OneDrive
 router.get('/folders', async (req, res) => {
@@ -9,7 +10,7 @@ router.get('/folders', async (req, res) => {
         const authHeader = req.headers.authorization;
         console.log('En-tête d\'autorisation reçu:', authHeader ? 'Présent' : 'Absent');
         
-        const accessToken = authHeader?.split(' ')[1];
+        const accessToken = decrypt(authHeader?.split(' ')[1]);
         if (!accessToken) {
             return res.status(401).json({ error: 'Token manquant' });
         }
@@ -60,7 +61,7 @@ router.get('/folders', async (req, res) => {
 router.post('/folder', async (req, res) => {
     try {
         const { folderName, parentFolderId = 'root' } = req.body;
-        const accessToken = req.headers.authorization?.split(' ')[1];
+        const accessToken = decrypt(req.headers.authorization?.split(' ')[1]);
 
         if (!folderName || !accessToken) {
             return res.status(400).json({ 

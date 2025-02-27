@@ -1,9 +1,8 @@
 const crypto = require('crypto');
 
 // Récupération des variables d'environnement
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'votre-cle-de-chiffrement-32-caracteres'; // 32 bytes
-const ENCRYPTION_IV = process.env.ENCRYPTION_IV || 'votre-iv-16-char'; // 16 bytes
-
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY; // 32 bytes
+const ENCRYPTION_IV = process.env.ENCRYPTION_IV; // 16 bytes
 // Configuration OAuth 2.0 de base
 const baseAuthConfig = {
   clientId: process.env.MS_CLIENT_ID || 'b2b9881b-5418-4e4b-92a2-610d6f165471',
@@ -21,35 +20,50 @@ const baseAuthConfig = {
 /**
  * Déchiffre un token chiffré
  * @param {string} encryptedToken - Token chiffré
- * @returns {string} - Token déchiffré
+ * @returns {Promise<string>} - Token déchiffré
  */
-async function decryptTokens(encryptedToken) {
+async function decrypt(data) {
   try {
-    // Convertir le token chiffré de base64 en buffer
-    const encryptedText = Buffer.from(encryptedToken, 'base64');
-    
-    // Extraire l'IV (les 16 premiers octets)
-    const iv = encryptedText.slice(0, 16);
-    
-    // Extraire le texte chiffré (le reste)
-    const encryptedData = encryptedText.slice(16);
-    
-    // Créer le déchiffreur
+    const key = ENCRYPTION_KEY;
+    const iv = ENCRYPTION_IV;
     const decipher = crypto.createDecipheriv(
-      'aes-256-cbc',
-      Buffer.from(ENCRYPTION_KEY),
-      iv
+      "aes-256-gcm",
+      Buffer.from(key, "hex"),
+      Buffer.from(iv, "hex")
     );
-    
-    // Déchiffrer
-    let decrypted = decipher.update(encryptedData);
-    decrypted = Buffer.concat([decrypted, decipher.final()]);
-    
-    // Convertir en chaîne de caractères
-    return decrypted.toString();
+    const encryptedData = data.slice(0, -32);
+    const authTag = data.slice(-32);
+    decipher.setAuthTag(Buffer.from(authTag, "hex"));
+    let decrypted = decipher.update(encryptedData, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+    return decrypted;
   } catch (error) {
-    console.error('Erreur lors du déchiffrement du token:', error);
-    throw new Error('Impossible de déchiffrer le token');
+    console.error('Erreur lors du déchiffrement:', error);
+    throw error;
+  }
+}
+
+/**
+ * Chiffre une chaîne de caractères
+ * @param {string} data - Données à chiffrer
+ * @returns {Promise<string>} - Données chiffrées
+ */
+async function encrypt(data) {
+  try {
+    const key = ENCRYPTION_KEY;
+    const iv = ENCRYPTION_IV;
+    const cipher = crypto.createCipheriv(
+      "aes-256-gcm",
+      Buffer.from(key, "hex"),
+      Buffer.from(iv, "hex")
+    );
+    let encrypted = cipher.update(data, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    const authTag = cipher.getAuthTag().toString("hex");
+    return encrypted + authTag;
+  } catch (error) {
+    console.error('Erreur lors du chiffrement:', error);
+    throw error;
   }
 }
 
@@ -121,8 +135,9 @@ async function refreshAccessToken(refreshToken, redirectUri) {
 }
 
 module.exports = {
-  decryptTokens,
+  decrypt,
   createGraphClient,
   getAuthConfig,
-  refreshAccessToken
+  refreshAccessToken,
+  encrypt
 }; 

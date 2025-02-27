@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-const { decryptTokens } = require("./utils");
+const { decrypt } = require("./utils");
 
 class OneDriveApi {
   constructor() {}
@@ -47,7 +47,7 @@ class OneDriveApi {
     let accessToken;
 
     try {
-      accessToken = await decryptTokens(accessTokenEncrypted);
+      accessToken = await decrypt(accessTokenEncrypted);
     } catch (error) {
       return res.status(400).send(error.message);
     }
@@ -124,9 +124,11 @@ class OneDriveApi {
       return res.status(400).send("Missing required fields");
     }
 
+    console.log(accessTokenEncrypted);
     let accessToken;
     try {
-      accessToken = await decryptTokens(accessTokenEncrypted);
+      accessToken = await decrypt(accessTokenEncrypted);
+      console.log(accessToken);
     } catch (error) {
       return res.status(400).send(error.message);
     }
@@ -144,8 +146,8 @@ class OneDriveApi {
 
       // Ajouter le filtre de nom si nécessaire
       if (nameFolder) {
-        // Microsoft Graph ne supporte pas directement le filtrage par nom dans l'URL
-        // Nous allons filtrer les résultats après les avoir récupérés
+        // Utiliser le filtre startsWith de Microsoft Graph
+        apiUrl += `?$filter=startsWith(name,'${encodeURIComponent(nameFolder)}')`;
       }
 
       const response = await fetch(apiUrl, {
@@ -161,18 +163,13 @@ class OneDriveApi {
       let data = await response.json();
       let files = data.value;
 
-      // Filtrer par nom si nécessaire
-      if (nameFolder) {
-        files = files.filter(file => file.name.includes(nameFolder));
-      }
-
       // Transformer les données pour correspondre au format attendu
       const formattedFiles = files.map(file => ({
         id: file.id,
         name: file.name,
         mimeType: file.file ? file.file.mimeType : 'folder',
         webViewLink: file.webUrl,
-        iconLink: file.file ? 'file-icon' : 'folder-icon', // OneDrive n'a pas d'équivalent direct
+        iconLink: file.file ? 'file-icon' : 'folder-icon',
         modifiedTime: file.lastModifiedDateTime
       }));
 
@@ -198,7 +195,7 @@ class OneDriveApi {
 
     let accessToken;
     try {
-      accessToken = await decryptTokens(accessTokenEncrypted);
+      accessToken = await decrypt(accessTokenEncrypted);
     } catch (error) {
       return res.status(400).send(error.message);
     }
@@ -268,7 +265,7 @@ class OneDriveApi {
 
     let accessToken;
     try {
-      accessToken = await decryptTokens(accessTokenEncrypted);
+      accessToken = await decrypt(accessTokenEncrypted);
     } catch (error) {
       return res.status(400).send(error.message);
     }
@@ -335,7 +332,7 @@ class OneDriveApi {
 
     let accessToken;
     try {
-      accessToken = await decryptTokens(accessTokenEncrypted);
+      accessToken = await decrypt(accessTokenEncrypted);
     } catch (error) {
       return res.status(400).send(error.message);
     }
