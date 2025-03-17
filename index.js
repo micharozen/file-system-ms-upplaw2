@@ -5,12 +5,14 @@ const bodyParser = require("body-parser");
 
 const app = express();
 
-// Importation des services
-const OneDriveApi = require("./backend/services/OneDriveApi");
-const oneDriveApi = new OneDriveApi();
+// Importation des services et utilitaires
+const OneDriveService = require("./backend/services");
+const { router: authRouter, authManager } = require("./backend/auth");
+const { decryptTokens } = require("./backend/utils");
+const Middleware = require("./backend/middleware");
 
-const { decryptTokens } = require("./backend/services/utils");
-const Middleware = require("./backend/services/middleware");
+// Création des instances de services
+const oneDriveService = new OneDriveService(authManager);
 const middleware = new Middleware();
 
 // Configuration CORS
@@ -31,10 +33,8 @@ app.use((req, res, next) => {
 
 app.use(cors(corsOptions));
 
-// Importation des routes
-const authRoutes = require('./backend/routes/auth');
-const onedriveRoutes = require('./backend/routes/onedrive');
-const sharepointRoutes = require('./backend/routes/sharepoint');
+// Configuration Google Cloud
+process.env.GOOGLE_CLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || 'gdrive-430511';
 
 // Routes publiques
 // Création d'une clé API
@@ -43,35 +43,40 @@ app.post("/create-api-key", async (req, res) => {
 });
 
 // Routes d'authentification (publiques)
-app.use('/auth', authRoutes);
+app.use('/auth', authRouter);
 
 // Middleware d'authentification pour les routes protégées
 app.use((req, res, next) => middleware.verifyToken(req, res, next));
 
-// Routes OneDrive et SharePoint (protégées)
-app.use('/onedrive', onedriveRoutes);
-app.use('/sharepoint', sharepointRoutes);
-
-// Routes API OneDrive directes (protégées)
+// Routes OneDrive directes (protégées)
 app.post("/onedrive-api/upload", async (req, res) => {
-  await oneDriveApi.uploadFile(req, res);
+  await oneDriveService.uploadFile(req, res);
 });
 
 app.get("/onedrive-api/list", async (req, res) => {
-  await oneDriveApi.listFiles(req, res);
+  await oneDriveService.listFiles(req, res);
 });
 
 app.get("/onedrive-api/listv2", async (req, res) => {
-  await oneDriveApi.listFilesv2(req, res);
+  await oneDriveService.listFilesv2(req, res);
 });
 
 app.post("/onedrive-api/folder", async (req, res) => {
-  await oneDriveApi.createFolder(req, res);
+  await oneDriveService.createFolder(req, res);
 });
 
 app.post("/onedrive-api/folders", async (req, res) => {
-  await oneDriveApi.createFolders(req, res);
+  await oneDriveService.createFolders(req, res);
 });
+
+// Routes OneDrive avec préfixe (protégées)
+app.get("/onedrive/folders", (req, res) => oneDriveService.listFolders(req, res));
+app.post("/onedrive/folder", (req, res) => oneDriveService.createFolder(req, res));
+app.post("/onedrive/upload", (req, res) => oneDriveService.uploadFile(req, res));
+app.get("/onedrive/files", (req, res) => oneDriveService.listFiles(req, res));
+app.get("/onedrive/filesv2", (req, res) => oneDriveService.listFilesv2(req, res));
+app.post("/onedrive/create-folder", (req, res) => oneDriveService.createFolder(req, res));
+app.post("/onedrive/create-folders", (req, res) => oneDriveService.createFolders(req, res));
 
 // Utilitaires pour les tokens (protégés)
 app.post("/decrypt-token", async (req, res) => {
@@ -89,13 +94,19 @@ app.post("/decrypt-token", async (req, res) => {
   }
 });
 
+// Route par défaut
+app.get('/', (req, res) => {
+  res.json({ message: 'API OneDrive opérationnelle' });
+});
+
 // Gestion des erreurs 404
 app.use((req, res) => {
   console.log('Route non trouvée:', req.url);
   res.status(404).json({ error: 'Route non trouvée' });
 });
 
-// Pour le développement local
+// Pour le développement local uniquement
+// Ne pas démarrer le serveur si nous sommes dans un environnement Cloud Functions
 if (process.env.NODE_ENV === 'development') {
   const PORT = process.env.PORT || 8000;
   app.listen(PORT, '0.0.0.0', () => {
@@ -104,7 +115,6 @@ if (process.env.NODE_ENV === 'development') {
     console.log('- /create-api-key (publique)');
     console.log('- /auth/* (publique)');
     console.log('- /onedrive/* (protégée)');
-    console.log('- /sharepoint/* (protégée)');
     console.log('- /onedrive-api/upload (protégée)');
     console.log('- /onedrive-api/list (protégée)');
     console.log('- /onedrive-api/listv2 (protégée)');
